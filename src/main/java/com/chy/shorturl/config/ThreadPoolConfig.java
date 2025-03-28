@@ -13,24 +13,27 @@ import java.util.concurrent.ThreadPoolExecutor;
  * 线程池配置
  *
  * @author Henry.Yu
- * @date 2025/03/28
+ * @date 2024/04/27
  */
 @Slf4j
 @EnableAsync
 @Configuration
 public class ThreadPoolConfig {
 
-    @Value("${shorturl.thread.core-size:8}")
+    @Value("${shorturl.thread.core-size:10}")
     private int corePoolSize;
 
-    @Value("${shorturl.thread.max-size:16}")
+    @Value("${shorturl.thread.max-size:50}")
     private int maxPoolSize;
 
-    @Value("${shorturl.thread.queue-capacity:1000}")
+    @Value("${shorturl.thread.queue-capacity:2000}")
     private int queueCapacity;
 
     @Value("${shorturl.thread.keep-alive-seconds:60}")
     private int keepAliveSeconds;
+
+    @Value("${shorturl.thread.monitor.period-seconds:60}")
+    private int monitorPeriodSeconds;
 
     /**
      * 短链接统计线程池
@@ -52,9 +55,47 @@ public class ThreadPoolConfig {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         // 等待所有任务结束后再关闭线程池
         executor.setWaitForTasksToCompleteOnShutdown(true);
+        // 设置线程池关闭的最大等待时间
+        executor.setAwaitTerminationSeconds(60);
+        // 设置线程池允许核心线程超时
+        executor.setAllowCoreThreadTimeOut(true);
         // 初始化
         executor.initialize();
-        log.info("初始化短链接线程池完成");
+        log.info("短链接线程池初始化完成, 核心线程数: {}, 最大线程数: {}, 队列容量: {}", 
+                corePoolSize, maxPoolSize, queueCapacity);
+                
+        // 创建线程池监控任务
+        startThreadPoolMonitor(executor);
+        
         return executor;
+    }
+    
+    /**
+     * 启动线程池监控
+     */
+    private void startThreadPoolMonitor(ThreadPoolTaskExecutor executor) {
+        Thread monitorThread = new Thread(() -> {
+            ThreadPoolExecutor threadPoolExecutor = executor.getThreadPoolExecutor();
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    // 记录线程池状态
+                    log.info("线程池状态: 活跃线程数: {}, 正在执行任务数: {}, 已完成任务数: {}, 任务总数: {}, 队列大小: {}",
+                            threadPoolExecutor.getActiveCount(),
+                            threadPoolExecutor.getTaskCount() - threadPoolExecutor.getCompletedTaskCount(),
+                            threadPoolExecutor.getCompletedTaskCount(),
+                            threadPoolExecutor.getTaskCount(),
+                            threadPoolExecutor.getQueue().size());
+                    
+                    Thread.sleep(monitorPeriodSeconds * 1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        });
+        monitorThread.setName("thread-pool-monitor");
+        monitorThread.setDaemon(true);
+        monitorThread.start();
+        log.info("启动线程池监控线程, 监控周期: {}秒", monitorPeriodSeconds);
     }
 } 

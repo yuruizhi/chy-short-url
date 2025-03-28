@@ -6,21 +6,26 @@ import com.chy.shorturl.mapper.UrlMappingMapper;
 import com.chy.shorturl.service.UrlMappingService;
 import com.chy.shorturl.strategy.ShortUrlGenerateStrategy;
 import com.chy.shorturl.strategy.ShortUrlGenerateStrategy.ShortCodeValidator;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
  * URL映射服务实现类
  *
  * @author Henry.Yu
- * @date 2025/03/28
+ * @date 2024/04/27
  */
 @Slf4j
 @Service
@@ -29,6 +34,11 @@ public class UrlMappingServiceImpl extends ServiceImpl<UrlMappingMapper, UrlMapp
 
     private final ShortUrlGenerateStrategy shortUrlGenerateStrategy;
     private final StringRedisTemplate redisTemplate;
+    private final Cache<String, String> shortUrlLocalCache;
+    private final Cache<String, Object> metadataLocalCache;
+    
+    @Qualifier("shortUrlTaskExecutor")
+    private final ThreadPoolTaskExecutor taskExecutor;
 
     @Value("${shorturl.domain}")
     private String domain;
@@ -70,8 +80,10 @@ public class UrlMappingServiceImpl extends ServiceImpl<UrlMappingMapper, UrlMapp
         
         save(urlMapping);
         
-        // 缓存到Redis
-        redisTemplate.opsForValue().set("shorturl:" + shortCode, originalUrl, cacheExpireSeconds, TimeUnit.SECONDS);
+        // 同步缓存到Redis和本地缓存
+        String cacheKey = "shorturl:" + shortCode;
+        redisTemplate.opsForValue().set(cacheKey, originalUrl, cacheExpireSeconds, TimeUnit.SECONDS);
+        shortUrlLocalCache.put(shortCode, originalUrl);
         
         return shortUrl;
     }
@@ -84,16 +96,27 @@ public class UrlMappingServiceImpl extends ServiceImpl<UrlMappingMapper, UrlMapp
      */
     @Override
     public String getOriginalUrl(String shortCode) {
-        // 先从Redis缓存获取
-        String originalUrl = redisTemplate.opsForValue().get("shorturl:" + shortCode);
-        
+        // 先从本地缓存获取
+        String originalUrl = shortUrlLocalCache.getIfPresent(shortCode);
         if (originalUrl != null) {
             // 异步增加访问次数
             incrementAccessCountAsync(shortCode);
             return originalUrl;
         }
         
-        // 缓存未命中，从数据库查询
+        // 本地缓存未命中，从Redis获取
+        String cacheKey = "shorturl:" + shortCode;
+        originalUrl = redisTemplate.opsForValue().get(cacheKey);
+        
+        if (originalUrl != null) {
+            // 放入本地缓存
+            shortUrlLocalCache.put(shortCode, originalUrl);
+            // 异步增加访问次数
+            incrementAccessCountAsync(shortCode);
+            return originalUrl;
+        }
+        
+        // Redis缓存未命中，从数据库查询
         UrlMapping urlMapping = findByShortCode(shortCode);
         if (urlMapping == null) {
             return null;
@@ -105,13 +128,15 @@ public class UrlMappingServiceImpl extends ServiceImpl<UrlMappingMapper, UrlMapp
         }
         
         // 更新访问次数
-        baseMapper.incrementAccessCount(urlMapping.getId());
+        incrementAccessCountAsync(shortCode);
+        
+        originalUrl = urlMapping.getOriginalUrl();
         
         // 更新缓存
-        redisTemplate.opsForValue().set("shorturl:" + shortCode, urlMapping.getOriginalUrl(),
-                cacheExpireSeconds, TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(cacheKey, originalUrl, cacheExpireSeconds, TimeUnit.SECONDS);
+        shortUrlLocalCache.put(shortCode, originalUrl);
         
-        return urlMapping.getOriginalUrl();
+        return originalUrl;
     }
     
     /**
@@ -131,16 +156,31 @@ public class UrlMappingServiceImpl extends ServiceImpl<UrlMappingMapper, UrlMapp
      * @param shortCode 短码
      */
     private void incrementAccessCountAsync(String shortCode) {
-        // 这里可以使用线程池或消息队列异步处理
-        new Thread(() -> {
+        // 使用元数据缓存记录待更新的访问次数
+        String countKey = "count:" + shortCode;
+        Long count = (Long) metadataLocalCache.get(countKey, k -> 0L);
+        metadataLocalCache.put(countKey, count + 1);
+        
+        // 使用线程池异步处理数据库更新
+        CompletableFuture.runAsync(() -> {
             try {
                 UrlMapping urlMapping = findByShortCode(shortCode);
                 if (urlMapping != null) {
                     baseMapper.incrementAccessCount(urlMapping.getId());
                 }
             } catch (Exception e) {
-                log.error("增加访问次数失败: {}", e.getMessage(), e);
+                log.error("异步增加访问次数失败: {}", e.getMessage(), e);
             }
-        }).start();
+        }, taskExecutor);
+    }
+    
+    /**
+     * 同步访问统计数据到数据库
+     * 这个方法可以由定时任务调用，批量更新访问计数
+     */
+    @Async("shortUrlTaskExecutor")
+    public void syncAccessCountToDb() {
+        // 实际项目中，这里可以实现批量更新逻辑
+        log.info("同步访问统计数据到数据库");
     }
 } 

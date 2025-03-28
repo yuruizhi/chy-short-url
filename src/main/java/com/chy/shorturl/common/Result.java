@@ -5,10 +5,10 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 通用返回结果
+ * 统一响应结果
  *
  * @author Henry.Yu
- * @date 2025/03/28
+ * @date 2024/04/27
  */
 @Data
 public class Result<T> implements Serializable {
@@ -16,26 +16,29 @@ public class Result<T> implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 状态码
+     * 响应码
      */
     private Integer code;
 
     /**
-     * 消息
+     * 响应消息
      */
     private String message;
 
     /**
-     * 数据
+     * 响应数据
      */
     private T data;
 
     /**
-     * 成功结果
-     *
-     * @param data 数据
-     * @param <T>  数据类型
-     * @return 成功结果
+     * 成功响应
+     */
+    public static <T> Result<T> success() {
+        return success(null);
+    }
+
+    /**
+     * 成功响应（带数据）
      */
     public static <T> Result<T> success(T data) {
         Result<T> result = new Result<>();
@@ -46,12 +49,7 @@ public class Result<T> implements Serializable {
     }
 
     /**
-     * 成功结果
-     *
-     * @param message 消息
-     * @param data    数据
-     * @param <T>     数据类型
-     * @return 成功结果
+     * 成功响应（带消息和数据）
      */
     public static <T> Result<T> success(String message, T data) {
         Result<T> result = new Result<>();
@@ -62,26 +60,21 @@ public class Result<T> implements Serializable {
     }
 
     /**
-     * 错误结果
-     *
-     * @param message 错误消息
-     * @param <T>     数据类型
-     * @return 错误结果
+     * 错误响应
      */
-    public static <T> Result<T> error(String message) {
-        Result<T> result = new Result<>();
-        result.setCode(500);
-        result.setMessage(message);
-        return result;
+    public static <T> Result<T> error() {
+        return error(500, "操作失败");
     }
 
     /**
-     * 错误结果
-     *
-     * @param code    错误码
-     * @param message 错误消息
-     * @param <T>     数据类型
-     * @return 错误结果
+     * 错误响应（带消息）
+     */
+    public static <T> Result<T> error(String message) {
+        return error(500, message);
+    }
+
+    /**
+     * 错误响应（带状态码和消息）
      */
     public static <T> Result<T> error(Integer code, String message) {
         Result<T> result = new Result<>();

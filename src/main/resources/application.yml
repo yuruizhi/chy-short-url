@@ -11,58 +11,64 @@ spring:
     name: chy-short-url
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/chy_short_url?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/short_url?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: root
-    password: admin123
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+    password: root
   data:
     redis:
       host: localhost
       port: 6379
       database: 0
-      password: admin123
-      timeout: 10s
+      timeout: 5000
       lettuce:
         pool:
-          max-active: 200
-          max-idle: 20
-          min-idle: 5
-          max-wait: 10s
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
 
 mybatis-plus:
-  mapper-locations: classpath:/mapper/**/*.xml
+  mapper-locations: classpath*:/mapper/**/*.xml
   type-aliases-package: com.chy.shorturl.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       id-type: auto
       logic-delete-field: is_deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
-  configuration:
-    map-underscore-to-camel-case: true
-    cache-enabled: false
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 logging:
   level:
-    com.chy.shorturl: info
-    org.springframework: warn
+    root: info
+    com.chy.shorturl: debug
+  file:
+    name: logs/shorturl.log
 
 # 短链接配置
 shorturl:
-  # 短链接域名
-  domain: http://chy.short
-  # 短链接长度
-  length: 6
-  # 短链接生成策略: RANDOM, SNOWFLAKE, BLOOM_FILTER, CONSISTENT_HASH
-  strategy: RANDOM
-  # 缓存过期时间(秒)
-  cache-expire: 86400
-  # 异步线程池配置
+  domain: http://localhost:8080
+  cache-expire: 86400  # 默认缓存过期时间，单位秒
+  length: 6  # 短链接长度
+  
+  # 本地缓存配置
+  cache:
+    local:
+      shortUrl:
+        size: 10000
+        expire-seconds: 3600
+      metadata:
+        size: 2000
+        expire-seconds: 1800
+    
+  # 线程池配置
   thread:
-    core-size: 8
-    max-size: 16
-    queue-capacity: 1000
-    keep-alive-seconds: 60 
+    core-size: 10
+    max-size: 50
+    queue-capacity: 2000
+    keep-alive-seconds: 60
+    monitor:
+      period-seconds: 60 

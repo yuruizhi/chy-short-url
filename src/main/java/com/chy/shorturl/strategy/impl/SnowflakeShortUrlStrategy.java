@@ -18,8 +18,8 @@ public class SnowflakeShortUrlStrategy implements ShortUrlGenerateStrategy {
     @Value("${shorturl.length:6}")
     private int urlLength;
     
-    // 开始时间戳，用于减小时间戳的值
-    private static final long START_TIMESTAMP = 1609459200000L; // 2021-01-01 00:00:00
+    // 开始时间戳，用于减小时间戳的值 // 2021-01-01 00:00:00
+    private static final long START_TIMESTAMP = 1609459200000L;
     
     // 机器ID所占的位数
     private static final long WORKER_ID_BITS = 5L;
