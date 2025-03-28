@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import com.chy.shorturl.common.util.LogUtil;
+
 /**
  * URL映射服务实现类
  *
@@ -56,6 +58,8 @@ public class UrlMappingServiceImpl extends ServiceImpl<UrlMappingMapper, UrlMapp
     @Override
     @Transactional(rollbackFor = Exception.class)
     public String generateShortUrl(String originalUrl, Long expireTime) {
+        log.info("生成短链接，原始URL: {}, 过期时间: {}, requestId: {}", originalUrl, expireTime, LogUtil.getRequestId());
+        
         // 生成短码
         String shortCode = shortUrlGenerateStrategy.generateShortUrl(originalUrl, code -> findByShortCode(code) != null);
         

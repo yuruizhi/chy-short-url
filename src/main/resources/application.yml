@@ -11,14 +11,15 @@ spring:
     name: chy-short-url
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/short_url?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/chy_short_url?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: root
-    password: root
+    password: admin123
   data:
     redis:
       host: localhost
       port: 6379
       database: 0
+      password: admin123
       timeout: 5000
       lettuce:
         pool:
@@ -42,11 +43,7 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 logging:
-  level:
-    root: info
-    com.chy.shorturl: debug
-  file:
-    name: logs/shorturl.log
+  config: classpath:logback/logback-spring.xml
 
 # 短链接配置
 shorturl:

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
+import com.chy.shorturl.common.util.LogUtil;
 
 /**
  * 短链接控制器
@@ -31,12 +32,14 @@ public class ShortUrlController {
      */
     @PostMapping("/api/url/shorten")
     public Result<String> shortenUrl(@Valid @RequestBody ShortenUrlRequest request) {
-        log.info("生成短链接请求: {}", request);
+        String requestId = LogUtil.getRequestId();
+        log.info("生成短链接请求开始处理, requestId: {}, 请求参数: {}", requestId, request);
         try {
             String shortUrl = urlMappingService.generateShortUrl(request.getUrl(), request.getExpireTime());
+            log.info("短链接生成成功, requestId: {}, 短链接: {}", requestId, shortUrl);
             return Result.success(shortUrl);
         } catch (Exception e) {
-            log.error("生成短链接失败: {}", e.getMessage(), e);
+            log.error("生成短链接失败, requestId: {}, 错误信息: {}", requestId, e.getMessage(), e);
             return Result.error("生成短链接失败");
         }
     }
@@ -49,15 +52,19 @@ public class ShortUrlController {
      */
     @GetMapping("/{shortCode}")
     public RedirectView redirect(@PathVariable String shortCode) {
+        String requestId = LogUtil.getRequestId();
+        log.info("短链接访问开始处理, requestId: {}, 短码: {}", requestId, shortCode);
         try {
             String originalUrl = urlMappingService.getOriginalUrl(shortCode);
             if (originalUrl != null) {
+                log.info("短链接重定向成功, requestId: {}, 短码: {}, 原始URL: {}", requestId, shortCode, originalUrl);
                 return new RedirectView(originalUrl);
             } else {
+                log.warn("短链接不存在或已过期, requestId: {}, 短码: {}", requestId, shortCode);
                 return new RedirectView("/error/404");
             }
         } catch (Exception e) {
-            log.error("重定向失败: {}", e.getMessage(), e);
+            log.error("短链接重定向失败, requestId: {}, 短码: {}, 错误信息: {}", requestId, shortCode, e.getMessage(), e);
             return new RedirectView("/error/500");
         }
     }
