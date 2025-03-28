@@ -11,7 +11,7 @@ import java.util.Random;
  * 随机策略生成短链接
  *
  * @author Henry.Yu
- * @date 2023/07/11
+ * @date 2025/03/28
  */
 @Component
 @RequiredArgsConstructor

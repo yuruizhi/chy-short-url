@@ -4,7 +4,7 @@ package com.chy.shorturl.strategy;
  * 短链接生成策略接口
  *
  * @author Henry.Yu
- * @date 2023/07/11
+ * @date 2025/03/28
  */
 public interface ShortUrlGenerateStrategy {
     

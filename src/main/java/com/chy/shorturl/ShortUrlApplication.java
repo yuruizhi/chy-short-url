@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * 短链接服务应用程序入口
  *
  * @author Henry.Yu
- * @date 2023/07/11
+ * @date 2025/03/28
  */
 @EnableAsync
 @SpringBootApplication

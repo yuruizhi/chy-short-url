@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * URL映射实体类
  *
  * @author Henry.Yu
- * @date 2023/07/11
+ * @date 2025/03/28
  */
 @Data
 @EqualsAndHashCode(callSuper = false)

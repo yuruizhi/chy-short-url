@@ -12,7 +12,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * Redis配置
  *
  * @author Henry.Yu
- * @date 2023/07/11
+ * @date 2025/03/28
  */
 @EnableCaching
 @Configuration

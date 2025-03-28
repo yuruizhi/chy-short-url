@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
  * 雪花算法生成短链接
  *
  * @author Henry.Yu
- * @date 2023/07/11
+ * @date 2025/03/28
  */
 @Component
 @RequiredArgsConstructor

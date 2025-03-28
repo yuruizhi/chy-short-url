@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * 线程池配置
  *
  * @author Henry.Yu
- * @date 2023/07/11
+ * @date 2025/03/28
  */
 @Slf4j
 @EnableAsync

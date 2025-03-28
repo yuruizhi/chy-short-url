@@ -6,7 +6,7 @@ import com.chy.shorturl.entity.UrlMapping;
  * URL映射服务接口
  *
  * @author Henry.Yu
- * @date 2023/07/11
+ * @date 2025/03/28
  */
 public interface UrlMappingService {
 

@@ -8,7 +8,7 @@ import java.io.Serializable;
  * 通用返回结果
  *
  * @author Henry.Yu
- * @date 2023/07/11
+ * @date 2025/03/28
  */
 @Data
 public class Result<T> implements Serializable {

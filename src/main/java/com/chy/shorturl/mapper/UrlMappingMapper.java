@@ -10,7 +10,7 @@ import org.apache.ibatis.annotations.Update;
  * URL映射Mapper接口
  *
  * @author Henry.Yu
- * @date 2023/07/11
+ * @date 2025/03/28
  */
 public interface UrlMappingMapper extends BaseMapper<UrlMapping> {
 
