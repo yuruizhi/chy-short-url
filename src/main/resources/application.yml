@@ -1,0 +1,68 @@
+server:
+  port: 8080
+  tomcat:
+    max-threads: 800
+    max-connections: 20000
+    accept-count: 1000
+    connection-timeout: 30000
+
+spring:
+  application:
+    name: chy-short-url
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/chy_short_url?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      password: admin123
+      timeout: 10s
+      lettuce:
+        pool:
+          max-active: 200
+          max-idle: 20
+          min-idle: 5
+          max-wait: 10s
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.chy.shorturl.entity
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: is_deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.chy.shorturl: info
+    org.springframework: warn
+
+# 短链接配置
+shorturl:
+  # 短链接域名
+  domain: http://chy.short
+  # 短链接长度
+  length: 6
+  # 短链接生成策略: RANDOM, SNOWFLAKE, BLOOM_FILTER, CONSISTENT_HASH
+  strategy: RANDOM
+  # 缓存过期时间(秒)
+  cache-expire: 86400
+  # 异步线程池配置
+  thread:
+    core-size: 8
+    max-size: 16
+    queue-capacity: 1000
+    keep-alive-seconds: 60 
