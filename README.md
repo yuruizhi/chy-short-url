@@ -165,14 +165,33 @@ executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 - 每条日志包含请求ID、时间戳、日志级别等标准字段
 - 便于日志系统采集和分析
 
-### 3. 日志工具类
+### 3. 参数日志注解
+
+- 使用`@LogParam`注解自动记录方法入参和出参
+- 支持敏感信息脱敏和日志级别控制
+- 参数化配置，灵活适应不同场景需求
 
 ```java
-// 获取当前请求上下文中的请求ID
-String requestId = LogUtil.getRequestId();
+// 简单用法
+@LogParam(desc = "接口描述")
+public Result method(Param param) {
+    // 方法实现
+}
 
-// 记录带有请求ID的日志
-log.info("处理业务，参数: {}, requestId: {}", param, requestId);
+// 完整用法
+@LogParam(
+    desc = "接口描述",
+    printRequest = true,      // 是否打印请求参数
+    printResponse = true,     // 是否打印响应结果
+    printHeaders = false,     // 是否打印请求头
+    printException = true,    // 是否打印异常堆栈
+    hideSensitive = true,     // 是否隐藏敏感信息
+    responseMaxLength = 1000, // 响应结果最大长度
+    level = LogLevel.INFO     // 日志级别
+)
+public Result method(Param param) {
+    // 方法实现
+}
 ```
 
 ### 4. 日志格式示例
@@ -183,7 +202,7 @@ log.info("处理业务，参数: {}, requestId: {}", param, requestId);
   "level": "INFO",
   "thread": "http-nio-8080-exec-1",
   "class": "com.chy.shorturl.controller.ShortUrlController",
-  "message": "生成短链接请求开始处理, requestId: a1b2c3d4e5f6g7h8, 请求参数: {url=https://example.com}",
+  "message": "[生成短链接] 开始执行, 请求参数: {\"url\":\"https://example.com\",\"phone\":\"138****1234\"}, requestId: a1b2c3d4e5f6g7h8",
   "request_id": "a1b2c3d4e5f6g7h8",
   "stack_trace": null
 }
