@@ -53,6 +53,277 @@
    - 支持集群水平扩展
    - 使用Redisson实现分布式锁，保证短码唯一性
 
+## 百万级并发支持
+
+要实现百万级并发短链接服务，除了短链接生成策略外，还需要在以下方面进行资源配置和优化：
+
+### 1. 硬件资源配置
+
+#### 服务器配置
+- **应用服务器**: 建议至少10台高性能服务器组成集群
+  - 每台配置: 16+ 核心CPU，64GB+ 内存，高速SSD
+  - 网络带宽: 至少10Gbps网络接口
+- **Redis集群**: 至少3主3从的集群配置
+  - 每节点配置: 8+ 核心CPU，32GB+ 内存
+  - 建议使用Redis Cluster而非单实例
+- **数据库服务器**: 主从架构或分片集群
+  - 主服务器: 16+ 核心CPU，64GB+ 内存，高性能SSD
+  - 至少配置2个从库用于读操作分流
+
+#### 负载均衡
+- 至少2台高性能负载均衡器(如F5、LVS或Nginx)
+- 配置会话保持和健康检查机制
+- 考虑使用DNS轮询实现地理级负载均衡
+
+### 2. 系统参数优化
+
+#### JVM配置
+```bash
+# 示例配置 - 根据实际服务器内存调整
+JAVA_OPTS="-Xms16g -Xmx16g -XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=512m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+ParallelRefProcEnabled"
+```
+
+#### Linux系统参数
+```bash
+# 最大文件描述符数量
+sysctl -w fs.file-max=1000000
+
+# TCP连接参数优化
+sysctl -w net.ipv4.tcp_max_syn_backlog=65536
+sysctl -w net.core.somaxconn=65536
+sysctl -w net.ipv4.tcp_fin_timeout=30
+sysctl -w net.ipv4.tcp_tw_reuse=1
+
+# 本地端口范围扩大
+sysctl -w net.ipv4.ip_local_port_range="1024 65535"
+```
+
+#### Tomcat/Undertow配置
+```yaml
+server:
+  tomcat:
+    max-threads: 1000                # 最大工作线程数
+    max-connections: 20000           # 最大连接数
+    accept-count: 2000               # 等待队列长度
+    connection-timeout: 3000         # 连接超时时间(ms)
+    processor-cache: 1000            # 处理器缓存大小
+  undertow:                          # 如使用Undertow
+    io-threads: 16                   # IO线程数，通常设置为CPU核心数
+    worker-threads: 1000             # 工作线程数
+    buffer-size: 1024                # 缓冲区大小
+```
+
+### 3. 网络架构优化
+
+#### CDN加速
+- 使用全球分布的CDN网络缓存热门短链接
+- 配置适当的缓存策略和TTL
+- 实现CDN回源流控，避免雪崩效应
+
+#### 多区域部署
+- 在多个地理区域部署服务实例
+- 实现就近接入，降低访问延迟
+- 容灾备份，提高系统可用性
+
+### 4. 数据库优化
+
+#### 分库分表策略
+```
+# 按照短码哈希分片，例如:
+short_url_0, short_url_1, ..., short_url_N
+```
+
+#### 读写分离
+- 写操作路由到主库
+- 读操作分发到多个从库
+- 实现动态数据源切换
+
+#### 批量操作优化
+```java
+// 批量插入示例
+@Transactional
+public void batchInsert(List<UrlMapping> mappings) {
+    // 每批100条数据
+    int batchSize = 100;
+    for (int i = 0; i < mappings.size(); i += batchSize) {
+        int endIndex = Math.min(i + batchSize, mappings.size());
+        List<UrlMapping> subList = mappings.subList(i, endIndex);
+        urlMappingMapper.insertBatch(subList);
+    }
+}
+```
+
+### 5. 缓存架构优化
+
+#### 多级缓存策略
+- 浏览器缓存: 设置合理的HTTP缓存头
+- CDN缓存: 全球加速热门链接
+- 应用层缓存: Caffeine本地缓存
+- 分布式缓存: Redis集群
+- 数据库缓存: 利用数据库查询缓存
+
+#### Redis集群配置
+```yaml
+spring:
+  redis:
+    cluster:
+      nodes:
+        - redis-node1:6379
+        - redis-node2:6379
+        - redis-node3:6379
+        - redis-node4:6379
+        - redis-node5:6379
+        - redis-node6:6379
+      max-redirects: 3
+    lettuce:
+      pool:
+        max-active: 1000
+        max-idle: 100
+        min-idle: 50
+        max-wait: 200ms
+    timeout: 1000ms
+```
+
+### 6. 限流熔断
+
+#### API限流配置
+```yaml
+resilience4j:
+  ratelimiter:
+    instances:
+      shortenUrl:
+        limit-for-period: 1000
+        limit-refresh-period: 1s
+        timeout-duration: 100ms
+      redirectUrl:
+        limit-for-period: 10000
+        limit-refresh-period: 1s
+        timeout-duration: 100ms
+```
+
+#### 熔断器配置
+```yaml
+resilience4j:
+  circuitbreaker:
+    instances:
+      urlService:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5000ms
+        permitted-number-of-calls-in-half-open-state: 10
+        sliding-window-size: 100
+        sliding-window-type: COUNT_BASED
+```
+
+### 7. 监控告警
+
+#### 指标收集
+- JVM监控: 内存、GC、线程
+- 系统监控: CPU、内存、磁盘I/O、网络
+- 应用监控: QPS、响应时间、错误率
+- 缓存监控: 命中率、过期率、内存占用
+
+#### 预警配置
+```yaml
+# Prometheus告警规则示例
+groups:
+- name: ShortUrl
+  rules:
+  - alert: HighErrorRate
+    expr: sum(rate(http_server_requests_seconds_count{status="5xx"}[1m])) / sum(rate(http_server_requests_seconds_count[1m])) > 0.01
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "高错误率告警"
+      description: "服务错误率超过1%，当前值: {{ $value }}"
+```
+
+### 8. 消息队列引入
+
+#### 异步处理架构
+```
+[请求] --> [生成/重定向服务] --> [消息队列] --> [统计处理服务]
+```
+
+#### Kafka配置
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: kafka1:9092,kafka2:9092,kafka3:9092
+    producer:
+      retries: 3
+      acks: 1
+      batch-size: 16384
+      buffer-memory: 33554432
+    consumer:
+      group-id: short-url-stats-group
+      auto-offset-reset: latest
+      max-poll-records: 500
+```
+
+### 9. 部署方案
+
+#### 容器编排
+```yaml
+# Kubernetes部署配置示例
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: short-url-service
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: short-url
+  template:
+    metadata:
+      labels:
+        app: short-url
+    spec:
+      containers:
+      - name: short-url-app
+        image: short-url:latest
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2"
+          limits:
+            memory: "8Gi"
+            cpu: "4"
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+```
+
+#### 自动扩缩容
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: short-url-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: short-url-service
+  minReplicas: 5
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+以上资源配置结合使用，可以有效支持百万级并发的短链接服务。实际配置应根据具体业务负载特性和可用资源进行调整优化。
+
 ## 缓存设计
 
 ### 1. Caffeine本地缓存
