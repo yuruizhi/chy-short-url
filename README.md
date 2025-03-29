@@ -95,17 +95,56 @@ executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 
 ## 短链接生成方案
 
+本系统支持多种短链接生成策略，可以根据业务需求选择最合适的方案：
+
 ### 1. 随机生成策略 (RandomShortUrlStrategy)
 
 - 随机生成指定长度的字符串作为短码
 - 优点：实现简单，均匀分布
 - 缺点：可能存在冲突，需要重试机制
+- 适用场景：通用短链接生成
 
 ### 2. 雪花算法策略 (SnowflakeShortUrlStrategy)
 
 - 基于Twitter的Snowflake算法生成唯一ID，然后转为62进制作为短码
-- 优点：保证唯一性，有序递增
+- 优点：保证唯一性，有序递增，支持分布式生成
 - 缺点：依赖时钟，如果时钟回拨可能出现问题
+- 适用场景：高并发分布式环境
+
+### 3. MD5哈希策略 (Md5ShortUrlStrategy)
+
+- 基于URL内容计算MD5哈希值，并取其中一部分作为短码
+- 优点：固定URL生成固定短码，计算效率高
+- 缺点：理论上存在哈希碰撞可能性
+- 适用场景：对URL内容稳定性要求高的场景
+
+### 4. MurmurHash3策略 (Murmur3ShortUrlStrategy)
+
+- 使用MurmurHash3算法生成哈希值，哈希分布更均匀
+- 优点：比MD5更快，哈希质量高，碰撞概率低
+- 缺点：同样存在碰撞可能
+- 适用场景：高性能要求场景
+
+### 5. 自增计数器策略 (CounterShortUrlStrategy)
+
+- 基于Redis全局计数器实现自增ID，支持分布式环境
+- 优点：实现简单，短码连续可预测，生成性能高
+- 缺点：短码可被预测，且长度随计数增长
+- 适用场景：对短码安全性要求不高，但要求稳定生成的场景
+
+### 6. Base64编码策略 (Base64ShortUrlStrategy)
+
+- 使用Base64编码方式，可将URL信息编码为短码
+- 优点：支持信息编码，可实现可逆转换
+- 缺点：生成的短码相对较长
+- 适用场景：需要在短码中包含特定信息的场景
+
+可以通过配置文件选择短链接生成策略：
+
+```yaml
+shorturl:
+  strategy: RANDOM  # 可选值: RANDOM, SNOWFLAKE, MD5, MURMUR3, COUNTER, BASE64
+```
 
 ## 访问统计优化
 
