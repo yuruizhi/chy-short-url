@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * Caffeine本地缓存配置
  *
  * @author Henry.Yu
- * @date 2024/04/27
+ * @date 2025/03/28
  */
 @Slf4j
 @EnableCaching

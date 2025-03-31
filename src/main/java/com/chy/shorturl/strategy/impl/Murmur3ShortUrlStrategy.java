@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * Murmur3哈希算法速度快，哈希分布均匀，适合短链接生成
  *
  * @author Henry.Yu
- * @date 2024/04/27
+ * @date 2025/03/28
  */
 @Component
 @RequiredArgsConstructor

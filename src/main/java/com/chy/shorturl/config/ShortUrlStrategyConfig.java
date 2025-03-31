@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Primary;
  * 短链接策略配置
  *
  * @author Henry.Yu
- * @date 2024/04/27
+ * @date 2025/03/28
  */
 @Configuration
 @RequiredArgsConstructor

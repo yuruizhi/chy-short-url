@@ -6,7 +6,7 @@ import java.lang.annotation.*;
  * 日志参数注解，用于自动打印方法入参和出参
  *
  * @author Henry.Yu
- * @date 2024/04/27
+ * @date 2025/03/28
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

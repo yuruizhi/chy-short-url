@@ -14,7 +14,7 @@ import org.springframework.web.filter.CorsFilter;
  * Web配置类
  *
  * @author Henry.Yu
- * @date 2024/04/27
+ * @date 2025/03/28
  */
 @Configuration
 @RequiredArgsConstructor

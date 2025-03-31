@@ -14,7 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * 基于MD5哈希算法的短链接生成策略
  *
  * @author Henry.Yu
- * @date 2024/04/27
+ * @date 2025/03/28
  */
 @Component
 @RequiredArgsConstructor

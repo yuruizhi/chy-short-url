@@ -6,7 +6,7 @@ import org.slf4j.MDC;
  * 日志工具类
  *
  * @author Henry.Yu
- * @date 2024/04/27
+ * @date 2025/03/28
  */
 public class LogUtil {
 

@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 使用Redis全局计数器保证分布式环境下ID唯一
  *
  * @author Henry.Yu
- * @date 2024/04/27
+ * @date 2025/03/28
  */
 @Component
 @RequiredArgsConstructor

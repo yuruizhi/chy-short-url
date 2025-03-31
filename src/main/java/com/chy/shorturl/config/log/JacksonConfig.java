@@ -26,7 +26,7 @@ import java.time.format.DateTimeFormatter;
  * Jackson配置类，用于日志中对象序列化
  *
  * @author Henry.Yu
- * @date 2024/04/27
+ * @date 2025/03/28
  */
 @Configuration
 public class JacksonConfig {

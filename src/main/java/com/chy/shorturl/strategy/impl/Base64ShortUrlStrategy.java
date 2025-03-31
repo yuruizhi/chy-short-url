@@ -15,7 +15,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * 适合需要可逆转换的场景，可以将有规则的信息编码为短链接
  *
  * @author Henry.Yu
- * @date 2024/04/27
+ * @date 2025/03/28
  */
 @Component
 @RequiredArgsConstructor
