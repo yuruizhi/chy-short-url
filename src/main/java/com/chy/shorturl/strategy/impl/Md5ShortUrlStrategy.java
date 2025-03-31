@@ -77,8 +77,8 @@ public class Md5ShortUrlStrategy implements ShortUrlGenerateStrategy {
             for (int i = 0; i < urlLength; i++) {
                 // 将16进制字符转换为0-15之间的数值
                 int value = Character.digit(md5Sub.charAt(i), 16);
-                // 将0-15的数值映射到CHARS的索引
-                int charIndex = (value * 4) % CHARS.length; // 乘以4扩大分布范围
+                // 将0-15的数值映射到CHARS的索引 // 乘以4扩大分布范围
+                int charIndex = (value * 4) % CHARS.length;
                 shortUrlChars[i] = CHARS[charIndex];
             }
             
